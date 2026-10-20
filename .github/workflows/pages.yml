@@ -1,0 +1,62 @@
+name: Publish client preview
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+      - name: Verify and unpack preview
+        env:
+          PREVIEW_SHA256: 125057505af5c9fa3d2bf66d65c12d19d89585cd63c66583ed6f09ae31defe49
+        run: |
+          printf '%s  %s\n' "$PREVIEW_SHA256" 'nasledie-client-github-pages.zip' | sha256sum --check --strict
+          unzip -q nasledie-client-github-pages.zip -d preview
+      - name: Prepare and verify static preview
+        env:
+          GITHUB_PAGES_BASE: ${{ steps.pages.outputs.base_path }}
+          GITHUB_PAGES_ORIGIN: ${{ steps.pages.outputs.origin }}
+        run: |
+          node preview/prepare-pages.mjs
+          node preview/check-pages.mjs --base "${GITHUB_PAGES_BASE}/" --origin "${GITHUB_PAGES_ORIGIN}"
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: preview/_site
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
