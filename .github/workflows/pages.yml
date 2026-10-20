@@ -31,7 +31,7 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Verify and unpack preview
         env:
-          PREVIEW_SHA256: 125057505af5c9fa3d2bf66d65c12d19d89585cd63c66583ed6f09ae31defe49
+          PREVIEW_SHA256: 6e7e3851e6108bf242c1ab0600b20ba067eaeb3d1144faede0a41425465a29c8
         run: |
           printf '%s  %s\n' "$PREVIEW_SHA256" 'nasledie-client-github-pages.zip' | sha256sum --check --strict
           python3 -m zipfile -e nasledie-client-github-pages.zip preview
